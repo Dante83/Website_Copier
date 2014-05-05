@@ -27,13 +27,8 @@ def recursive_webpage_cursor(url_cursor, file_path, root_replacement):
     except urllib2.URLError, e:
         raise Exception("%s returned an error: %s" % (url_cursor, e) )
 
-    print 'test1: %s' % (file_name)
-
     #Determine path extension from webpage root url
-    print 'test2: ', url_components
-
     current_directory = os.path.join(url_components.path, file_path)
-    print 'test3: ', current_directory
 
     #Remove the file name from the directory path
     folder_path = url_components.path.split('/')
@@ -87,21 +82,22 @@ def recursive_webpage_cursor(url_cursor, file_path, root_replacement):
     #already exist
 
     #Report results
-    print "{} cloned...", url_cursor
+    print("%s cloned..." % url_cursor)
 
     #Find all the hyper-links on this page
     hyperlinks = soup.find_all('a')
 
     #Filter out all hyper-links which are mailto links
-    hyperlinks = filter(lambda link: 'mailto:' not in link, hyperlinks)
+    hyperlinks = filter(lambda link: 'mailto:' not in link['href'], hyperlinks)
+
+    #Filter out bookmark hyper-links
+    hyperlinks = filter(lambda link: '#' not in link['href'], hyperlinks)
 
     #Recursively go about traveling through each of these hyper-links repeating
     #this process on those pages that haven't already been created.
     for link in hyperlinks:
-
         next_page = urlparse.urljoin(url_cursor, link['href'])
         if next_page not in url_list:
-
             recursive_webpage_cursor(next_page, file_path, root_replacement)
 
 #TODO: Complete Resource Automation
