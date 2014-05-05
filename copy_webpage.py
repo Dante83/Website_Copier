@@ -3,31 +3,31 @@ import sys
 import os
 import urllib2
 import urlparse
+import codecs
 from bs4 import BeautifulSoup
+from resource_acquisition_manager import *
 
 url_list = []
-uri_list = []
-creates_root_index = 0
 
 def recursive_webpage_cursor(url_cursor, file_path, root_replacement):
-    #Record that the present webpage is being tracked
+    #Record that the present web-page is being tracked
     if url_cursor not in url_list:
         url_list.append(url_cursor)
 
-    #Acquire http responce from url
+    #Acquire http response from url
     request = urllib2.Request(url_cursor)
+    url_components = urlparse.urlparse(url_cursor)
+    file_name = url_components.path.split('/')[-1]
+    root_path = url_components.netloc
 
     try:
         responce = urllib2.urlopen(request)
-        url_components = urlparse.urlparse(url_cursor)
-        file_name = url_components.path.split('/')[-1]
         html = responce.read()
-
-        root_path = url_components.scheme + '://' + url_components.netloc
     except urllib2.URLError, e:
         raise Exception("%s returned an error: %s" % (url_cursor, e) )
+        sys.exit(0)
 
-    #Determine path extension from webpage root url
+    #Determine path extension from web-page root url
     current_directory = os.path.join(url_components.path, file_path)
 
     #Remove the file name from the directory path
@@ -37,7 +37,7 @@ def recursive_webpage_cursor(url_cursor, file_path, root_replacement):
     #Remove empty elements from folder path
     folder_path = filter(None, folder_path)
 
-    #Concatonate all folders in relative local file path
+    #Concatenate all folders in relative local file path
     folder_path_string = ''
     for folder in folder_path:
         folder_path_string = folder + '/' + folder_path_string
@@ -48,38 +48,46 @@ def recursive_webpage_cursor(url_cursor, file_path, root_replacement):
         if not os.path.exists(current_directory):
             os.makedirs(current_directory)
 
-    #Add this webpage to the current directory unless it already exists
-    try:
-        if file_name is '':
-            file_loc = os.path.join(current_directory, 'index.html')
-            creates_root_index = 1
-        elif file_name.endswith('.html'):
-            file_loc = os.path.join(current_directory, file_name)
-        else:
-            file_loc = os.path.join(current_directory, (file_name + '.html') )
+    #Add this web-page to the current directory unless it already exists
+    if file_name is '':
+        file_loc = os.path.join(current_directory, 'index.html')
+    elif file_name.endswith('.html'):
+        file_loc = os.path.join(current_directory, file_name)
+    else:
+        file_loc = os.path.join(current_directory, (file_name + '.html') )
 
-        modified_soup = BeautifulSoup(html)
+    modified_soup = BeautifulSoup(html.decode('utf-8'))
 
-        #for link in modified_soup.find_all('a'):
-        #    if (root_path) in link['href']:
-        #        link['href'].replace(root_replacement)
-                #TODO: Possibly worry about links to the newly created index page
-                #if urlparse.urlparse(link['href']).path.split('/')[-1] is '':
-                #    link['href'].
+    for link in modified_soup.find_all('a'):
+        if (root_path) in link['href']:
+            updated_link = link['href'].replace(root_path, root_replacement)
+        elif not link['href'].endswith('.html'):
+            link['href'] += '.html'
 
-        html_file = open(file_loc, 'w')
-        html_file.write( modified_soup.prettify("utf-8") )
-    except:
-        print 'IO Write Error.'
-        sys.exit(0)
-    finally:
-        html_file.close()
+        #Check to make sure we're not modifying a link that's already inside
+        #of the cloned url list, if so add this link, too.
+        if link['href'] in url_list:
+            url_list.append(updated_link)
+            link['href'] = updated_link
 
-    #Use beautiful soup to iterate over all hyperlinks and resources recursively
+        try:
+            html_file = codecs.open(file_loc, 'w', 'utf-8')
+            html_file.write( html.decode('utf-8'))
+        except IOError as e:
+            print 'IO Write Error: %s'%e
+            sys.exit(0)
+        finally:
+            html_file.close()
+
+    #Acquire CSS Files
+    acquire_css_files(html, url_cursor, file_path)
+
+    #TODO: Acquire JavaScript Files
+
+    #Use beautiful soup to iterate over all hyper-links and resources recursively
     soup = BeautifulSoup(html)
 
-    #TODO: Add all resources of this page to their desired directories unless they
-    #already exist
+    #TODO: Acquire Page Resources
 
     #Report results
     print("%s cloned..." % url_cursor)
@@ -93,19 +101,12 @@ def recursive_webpage_cursor(url_cursor, file_path, root_replacement):
     #Filter out bookmark hyper-links
     hyperlinks = filter(lambda link: '#' not in link['href'], hyperlinks)
 
+    #Filter out external hyper-links (e.g. don't copy all of google.com)
+    hyperlinks = filter(lambda link: link['href'].startswith('/') or link['href'].startswith(url_components.netloc), hyperlinks)
+
     #Recursively go about traveling through each of these hyper-links repeating
     #this process on those pages that haven't already been created.
     for link in hyperlinks:
         next_page = urlparse.urljoin(url_cursor, link['href'])
         if next_page not in url_list:
             recursive_webpage_cursor(next_page, file_path, root_replacement)
-
-#TODO: Complete Resource Automation
-#def gather_resources(resource_type):
-#    for resource in soup.find_all(resource_type):
-#        resource not in uri_list:
-#            res = requests.get(resource)
-#
-#            #Create the resource directory if it doesn't exist
-
-            #Save the resource to this local directory
