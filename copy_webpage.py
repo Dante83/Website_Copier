@@ -1,71 +1,108 @@
 #!/usr/bin/python
-
-import Tkinter, tkFileDialog
 import sys
 import os
 import urllib2
+import urlparse
 from bs4 import BeautifulSoup
 
-#Acquire the webpage url
-url = raw_input("Enter the webpage base url to start from: ")
-
-#Acquire the path for the output webpage
-root = Tkinter.Tk()
-root.withdraw()
-file_path = tkFileDialog.askopenfilename()
-file_path_cursor = file_path
-
-#TODO: fix up the url so that it's in the right format, even if the user
-#enters a short-hand version.
-
-url_list = [url]
+url_list = []
 uri_list = []
+creates_root_index = 0
 
-#Initialize the webpage recursion loop
-recursive_webpage_cursor(url)
-
-def recursive_webpage_cursor(url_cursor):
+def recursive_webpage_cursor(url_cursor, file_path, root_replacement):
     #Record that the present webpage is being tracked
     if url_cursor not in url_list:
-        url_list += url_cursor
+        url_list.append(url_cursor)
 
-    #Navigate to the webpage
-    soup = BeautifulSoup(url)
+    #Acquire http responce from url
+    request = urllib2.Request(url_cursor)
+
+    try:
+        responce = urllib2.urlopen(request)
+        url_components = urlparse.urlparse(url_cursor)
+        file_name = url_components.path.split('/')[-1]
+        html = responce.read()
+
+        root_path = url_components.scheme + '://' + url_components.netloc
+    except urllib2.URLError, e:
+        raise Exception("%s returned an error: %s" % (url_cursor, e) )
+
+    print 'test1: %s' % (file_name)
 
     #Determine path extension from webpage root url
-    path_ext = os.path.dirname(url_cursor)
-    print 'test1: {}', path_ext
+    print 'test2: ', url_components
 
-    #Create directory structure unless it already exists
-    current_directory = os.path.join(path_ext, file_path)
-    print 'test2: {}', current_directory
+    current_directory = os.path.join(url_components.path, file_path)
+    print 'test3: ', current_directory
 
-    if not os.path.exists(current_directory):
-        os.makedirs(current_directory)
+    #Remove the file name from the directory path
+    folder_path = url_components.path.split('/')
+    del folder_path[-1]
+
+    #Remove empty elements from folder path
+    folder_path = filter(None, folder_path)
+
+    #Concatonate all folders in relative local file path
+    folder_path_string = ''
+    for folder in folder_path:
+        folder_path_string = folder + '/' + folder_path_string
+
+    #Create the directory if it doesn't exist
+    if folder_path_string is not '':
+        current_directory = os.path.join(current_directory, folder_path_string)
+        if not os.path.exists(current_directory):
+            os.makedirs(current_directory)
 
     #Add this webpage to the current directory unless it already exists
     try:
-        if soup.name == '':
-            html_file = open(current_directory + 'index.html', 'w')
+        if file_name is '':
+            file_loc = os.path.join(current_directory, 'index.html')
+            creates_root_index = 1
+        elif file_name.endswith('.html'):
+            file_loc = os.path.join(current_directory, file_name)
         else:
-            html_file = open(current_directory + soup.name + '.html', 'w')
-        html_file.write( soup.prettify() )
+            file_loc = os.path.join(current_directory, (file_name + '.html') )
+
+        modified_soup = BeautifulSoup(html)
+
+        #for link in modified_soup.find_all('a'):
+        #    if (root_path) in link['href']:
+        #        link['href'].replace(root_replacement)
+                #TODO: Possibly worry about links to the newly created index page
+                #if urlparse.urlparse(link['href']).path.split('/')[-1] is '':
+                #    link['href'].
+
+        html_file = open(file_loc, 'w')
+        html_file.write( modified_soup.prettify("utf-8") )
     except:
         print 'IO Write Error.'
         sys.exit(0)
     finally:
         html_file.close()
 
+    #Use beautiful soup to iterate over all hyperlinks and resources recursively
+    soup = BeautifulSoup(html)
+
     #TODO: Add all resources of this page to their desired directories unless they
     #already exist
-
 
     #Report results
     print "{} cloned...", url_cursor
 
-    for link in soup.find_all('a'):
-        if link not in url_list:
-            recursive_webpage_cursor(link)
+    #Find all the hyper-links on this page
+    hyperlinks = soup.find_all('a')
+
+    #Filter out all hyper-links which are mailto links
+    hyperlinks = filter(lambda link: 'mailto:' not in link, hyperlinks)
+
+    #Recursively go about traveling through each of these hyper-links repeating
+    #this process on those pages that haven't already been created.
+    for link in hyperlinks:
+
+        next_page = urlparse.urljoin(url_cursor, link['href'])
+        if next_page not in url_list:
+
+            recursive_webpage_cursor(next_page, file_path, root_replacement)
 
 #TODO: Complete Resource Automation
 #def gather_resources(resource_type):
