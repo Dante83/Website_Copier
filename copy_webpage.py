@@ -27,26 +27,9 @@ def recursive_webpage_cursor(url_cursor, file_path, root_replacement):
         raise Exception("%s returned an error: %s" % (url_cursor, e) )
         sys.exit(0)
 
-    #Determine path extension from web-page root url
+    url_components = urlparse.urlparse(url_components.path)
     current_directory = os.path.join(url_components.path, file_path)
-
-    #Remove the file name from the directory path
-    folder_path = url_components.path.split('/')
-    del folder_path[-1]
-
-    #Remove empty elements from folder path
-    folder_path = filter(None, folder_path)
-
-    #Concatenate all folders in relative local file path
-    folder_path_string = ''
-    for folder in folder_path:
-        folder_path_string = folder + '/' + folder_path_string
-
-    #Create the directory if it doesn't exist
-    if folder_path_string is not '':
-        current_directory = os.path.join(current_directory, folder_path_string)
-        if not os.path.exists(current_directory):
-            os.makedirs(current_directory)
+    check_create_directory(url_components.path, file_path)
 
     #Add this web-page to the current directory unless it already exists
     if file_name is '':
@@ -62,13 +45,15 @@ def recursive_webpage_cursor(url_cursor, file_path, root_replacement):
         if (root_path) in link['href']:
             updated_link = link['href'].replace(root_path, root_replacement)
         elif not link['href'].endswith('.html'):
-            link['href'] += '.html'
+            updated_link = link['href'] + '.html'
+        else:
+            updated_link = link['href']
 
-        #Check to make sure we're not modifying a link that's already inside
-        #of the cloned url list, if so add this link, too.
-        if link['href'] in url_list:
-            url_list.append(updated_link)
-            link['href'] = updated_link
+    #Check to make sure we're not modifying a link that's already inside
+    #of the cloned url list, if so add this link, too.
+    if link['href'] not in url_list:
+        url_list.append(updated_link)
+        link['href'] = updated_link
 
         try:
             html_file = codecs.open(file_loc, 'w', 'utf-8')

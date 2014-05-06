@@ -4,6 +4,7 @@ import os
 import urllib2
 import urlparse
 from bs4 import BeautifulSoup
+from directory_manager import *
 
 css_url_list = []
 js_url_list = []
@@ -11,7 +12,7 @@ img_url_list = []
 mov_url_list = []
 
 #TODO: CSS Acquisition Method
-def acquire_css_files(html, webpage_cursor, file_path):
+def acquire_css_files(html, webpage_cursor, local_file_path):
     soup = BeautifulSoup(html)
 
     #Find all css file locations
@@ -23,26 +24,11 @@ def acquire_css_files(html, webpage_cursor, file_path):
         if href not in css_url_list:
             css_url_list.append(href)
 
-            #Create the directories if they don't exist
+            check_create_directory(href, local_file_path)
+
+            file_name = urlparse.urlparse(href).path.split('/')[-1]
             url_components = urlparse.urlparse(href)
-            file_name = url_components.path.split('/')[-1]
-            current_directory = os.path.join(url_components.path, file_path)
-            folder_path = url_components.path.split('/')
-            del folder_path[-1]
-
-            #Remove empty elements from folder path
-            folder_path = filter(None, folder_path)
-
-            #Concatenate all folders in relative local file path
-            folder_path_string = ''
-            for folder in folder_path:
-                folder_path_string = folder + '/' + folder_path_string
-
-            #Create the directory if it doesn't exist
-            if folder_path_string is not '':
-                current_directory = os.path.join(current_directory, folder_path_string)
-                if not os.path.exists(current_directory):
-                    os.makedirs(current_directory)
+            current_directory = os.path.join(url_components.path, local_file_path)
 
             #Save this file to the directory
             request = urllib2.Request(href)
@@ -75,7 +61,7 @@ def acquire_css_files(html, webpage_cursor, file_path):
             #TODO: Acquire all page resources from this css file
 
 # JavaScript Acquisition Method
-def acquire_js_files():
+#def acquire_js_files():
 
 
 #TODO: Page Resource Acquisition Method
