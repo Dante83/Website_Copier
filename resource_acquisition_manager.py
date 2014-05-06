@@ -1,15 +1,20 @@
 #!/usr/bin/python
 import sys
 import os
+import urllib
 import urllib2
 import urlparse
+import cssutils
+import logging
 from bs4 import BeautifulSoup
 from directory_manager import *
 
 css_url_list = []
-js_url_list = []
-img_url_list = []
-mov_url_list = []
+resource_url_list = []
+
+#Turn off annoying error and warning messages from css utilities
+#(It doesn't recognize everything it sees, but it still works)
+cssutils.log.setLevel(logging.CRITICAL)
 
 #TODO: CSS Acquisition Method
 def acquire_css_files(html, webpage_cursor, local_file_path):
@@ -24,11 +29,8 @@ def acquire_css_files(html, webpage_cursor, local_file_path):
         if href not in css_url_list:
             css_url_list.append(href)
 
-            check_create_directory(href, local_file_path)
-
+            current_directory = check_create_directory(href, local_file_path)
             file_name = urlparse.urlparse(href).path.split('/')[-1]
-            url_components = urlparse.urlparse(href)
-            current_directory = os.path.join(url_components.path, local_file_path)
 
             #Save this file to the directory
             request = urllib2.Request(href)
@@ -58,10 +60,24 @@ def acquire_css_files(html, webpage_cursor, local_file_path):
 
             print("%s cloned..." % href)
 
-            #TODO: Acquire all page resources from this css file
+            css_sheet = cssutils.parseString(css)
+            resource_urls = cssutils.getUrls(css_sheet)
 
-# JavaScript Acquisition Method
-#def acquire_js_files():
+            for url in resource_urls:
+                if url not in resource_url_list:
+                    resource_url_list.append(url)
 
+                    #Create any required new directories for this url
+                    current_directory = check_create_directory(url, local_file_path)
 
-#TODO: Page Resource Acquisition Method
+                    url = urlparse.urljoin(webpage_cursor, url)
+                    file_name = urlparse.urlparse(url).path.split('/')[-1]
+
+                    #Save this file to the directory
+                    try:
+                        urllib.urlretrieve(url, os.path.join(current_directory, file_name))
+                    except urllib2.URLError, e:
+                        raise Exception("%s returned an error: %s" % (href, e) )
+                        sys.exit(0)
+
+                    print("%s cloned..." % url)

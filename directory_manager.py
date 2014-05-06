@@ -23,3 +23,5 @@ def check_create_directory(web_page_directory, local_file_path):
         current_directory = os.path.join(current_directory, folder_path_string)
         if not os.path.exists(current_directory):
             os.makedirs(current_directory)
+
+    return current_directory

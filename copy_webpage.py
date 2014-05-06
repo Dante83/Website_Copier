@@ -28,8 +28,7 @@ def recursive_webpage_cursor(url_cursor, file_path, root_replacement):
         sys.exit(0)
 
     url_components = urlparse.urlparse(url_components.path)
-    current_directory = os.path.join(url_components.path, file_path)
-    check_create_directory(url_components.path, file_path)
+    current_directory = check_create_directory(url_components.path, file_path)
 
     #Add this web-page to the current directory unless it already exists
     if file_name is '':
