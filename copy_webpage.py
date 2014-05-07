@@ -22,7 +22,7 @@ def recursive_webpage_cursor(url_cursor, file_path, root_replacement, file_depth
 
     try:
         responce = urllib2.urlopen(request)
-        html = responce.read()
+        html = responce.read().decode('utf-8', 'ignore')
     except urllib2.URLError, e:
         raise Exception("%s returned an error: %s" % (url_cursor, e) )
         sys.exit(0)
@@ -52,7 +52,7 @@ def recursive_webpage_cursor(url_cursor, file_path, root_replacement, file_depth
             updated_link = depth_relative_link_slashes + 'index.html'
         else:
             #Make sure that all non-index files point to html files
-            if not link['href'].endswith('.html'):
+            if not link['href'].endswith('.html') and '#' not in link['href']:
                 updated_link = link['href'] + '.html'
             else:
                 updated_link = link['href']

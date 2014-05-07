@@ -8,7 +8,8 @@ from directory_manager import *
 resource_list = []
 
 def get_page_resources(file_depth, page_soup, local_file_path, webpage_cursor):
-    for resource in page_soup.find_all('img'):
+
+    for resource in page_soup.find_all(src = True):
         #Setup the directories
         current_directory = check_create_directory(resource['src'], local_file_path)
         url = urlparse.urljoin(webpage_cursor, resource['src'])
