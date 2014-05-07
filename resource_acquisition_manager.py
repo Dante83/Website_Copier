@@ -88,7 +88,7 @@ def acquire_css_files(html, webpage_cursor, local_file_path):
                     #Save this file to the directory
                     try:
                         urllib.urlretrieve(url, os.path.join(current_directory, file_name))
-                    except urllib2.URLError, e:
+                    except urllib.URLError, e:
                         raise Exception("%s returned an error: %s" % (href, e) )
                         sys.exit(0)
 

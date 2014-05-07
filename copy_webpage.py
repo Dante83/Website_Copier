@@ -5,6 +5,8 @@ import urllib2
 import urlparse
 from bs4 import BeautifulSoup
 from resource_acquisition_manager import *
+from page_resource_copier import *
+from page_resource_copier import *
 
 url_list = []
 
@@ -71,6 +73,9 @@ def recursive_webpage_cursor(url_cursor, file_path, root_replacement, file_depth
         updated_link = depth_relative_link_slashes + css_link['href'][1:]
 
         css_link['href'] = updated_link
+
+    #Acquire all image files
+    modified_soup = get_page_resources(file_depth, modified_soup, file_path, url_cursor)
 
     #Check to make sure we're not modifying a link that's already inside
     #of the cloned url list, if so add this link, too.
