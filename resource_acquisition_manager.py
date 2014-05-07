@@ -41,6 +41,17 @@ def acquire_css_files(html, webpage_cursor, local_file_path):
                 raise Exception("%s returned an error: %s" % (href, e) )
                 sys.exit(0)
 
+            modified_css_sheet = cssutils.parseString(css)
+            resource_urls = cssutils.getUrls(modified_css_sheet)
+            modified_css_text = css
+
+            file_depth = href.count('/') - 3
+            depth_relative_link_slashes = '../' * file_depth
+
+            for url in resource_urls:
+                modified_url = depth_relative_link_slashes + url[1:]
+                modified_css_text = modified_css_text.replace(url, modified_url)
+
             #Iterate over all internal resources on each css file
             try:
                 if file_name is '':
@@ -51,7 +62,7 @@ def acquire_css_files(html, webpage_cursor, local_file_path):
                     file_loc = os.path.join(current_directory, (file_name + '.css') )
 
                 css_file = open(file_loc, 'w')
-                css_file.write(css)
+                css_file.write(modified_css_text)
             except IOError as e:
                 print 'IO Write Error: %s'%e
                 sys.exit(0)
@@ -60,6 +71,7 @@ def acquire_css_files(html, webpage_cursor, local_file_path):
 
             print("%s cloned..." % href)
 
+            #Clone all resources associated with each url
             css_sheet = cssutils.parseString(css)
             resource_urls = cssutils.getUrls(css_sheet)
 
@@ -81,3 +93,4 @@ def acquire_css_files(html, webpage_cursor, local_file_path):
                         sys.exit(0)
 
                     print("%s cloned..." % url)
+

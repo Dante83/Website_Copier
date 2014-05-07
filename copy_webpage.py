@@ -38,6 +38,8 @@ def recursive_webpage_cursor(url_cursor, file_path, root_replacement, file_depth
 
     modified_soup = BeautifulSoup(html)
 
+    #Modify links in file so that they function as relative links in the final
+    #output html
     for link in modified_soup.find_all('a'):
         original_link = link['href']
 
@@ -59,6 +61,16 @@ def recursive_webpage_cursor(url_cursor, file_path, root_replacement, file_depth
             updated_link = depth_relative_link_slashes + updated_link[1:]
 
         link['href'] = updated_link
+
+    #Modify CSS links so that they function as relative links in the final output
+    #html
+
+    #Find all css file locations
+    for css_link in modified_soup.find_all('link'):
+        depth_relative_link_slashes = '../' * file_depth
+        updated_link = depth_relative_link_slashes + css_link['href'][1:]
+
+        css_link['href'] = updated_link
 
     #Check to make sure we're not modifying a link that's already inside
     #of the cloned url list, if so add this link, too.
