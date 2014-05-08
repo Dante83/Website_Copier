@@ -10,7 +10,7 @@ from page_resource_copier import *
 
 url_list = []
 
-def recursive_webpage_cursor(url_cursor, file_path, root_replacement, file_depth):
+def recursive_webpage_cursor(url_cursor, file_path, root_replacement, file_depth, root_directory):
     #Record that the present web-page is being tracked
     url_list.append(url_cursor)
 
@@ -28,7 +28,7 @@ def recursive_webpage_cursor(url_cursor, file_path, root_replacement, file_depth
         sys.exit(0)
 
     url_components = urlparse.urlparse(url_components.path)
-    current_directory = check_create_directory(url_components.path, file_path)
+    current_directory = check_create_directory(url_components.path, file_path, root_directory)
 
     #Add this web-page to the current directory unless it already exists
     if file_name is '':
@@ -64,9 +64,6 @@ def recursive_webpage_cursor(url_cursor, file_path, root_replacement, file_depth
 
         link['href'] = updated_link
 
-    #Modify CSS links so that they function as relative links in the final output
-    #html
-
     #Find all css file locations
     for css_link in modified_soup.find_all('link'):
         depth_relative_link_slashes = '../' * file_depth
@@ -75,7 +72,7 @@ def recursive_webpage_cursor(url_cursor, file_path, root_replacement, file_depth
         css_link['href'] = updated_link
 
     #Acquire all image files
-    modified_soup = get_page_resources(file_depth, modified_soup, file_path, url_cursor)
+    modified_soup = get_page_resources(file_depth, modified_soup, file_path, url_cursor, root_directory)
 
     #Check to make sure we're not modifying a link that's already inside
     #of the cloned url list, if so add this link, too.
@@ -91,14 +88,10 @@ def recursive_webpage_cursor(url_cursor, file_path, root_replacement, file_depth
             html_file.close()
 
     #Acquire CSS Files
-    acquire_css_files(html, url_cursor, file_path)
-
-    #TODO: Acquire JavaScript Files
+    acquire_css_files(html, modified_soup, url_cursor, file_path, root_directory)
 
     #Use beautiful soup to iterate over all hyper-links and resources recursively
     soup = BeautifulSoup(html)
-
-    #TODO: Acquire Page Resources
 
     #Report results
     print("%s cloned..." % url_cursor)
@@ -120,4 +113,4 @@ def recursive_webpage_cursor(url_cursor, file_path, root_replacement, file_depth
     for link in hyperlinks:
         next_page = urlparse.urljoin(url_cursor, link['href'])
         if next_page not in url_list:
-            recursive_webpage_cursor(next_page, file_path, root_replacement, next_page.count('/')  - 3)
+            recursive_webpage_cursor(next_page, file_path, root_replacement, next_page.count('/')  - 3, root_directory)

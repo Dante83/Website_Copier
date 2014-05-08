@@ -7,11 +7,11 @@ from directory_manager import *
 
 resource_list = []
 
-def get_page_resources(file_depth, page_soup, local_file_path, webpage_cursor):
+def get_page_resources(file_depth, page_soup, local_file_path, webpage_cursor, root_directory):
 
     for resource in page_soup.find_all(src = True):
         #Setup the directories
-        current_directory = check_create_directory(resource['src'], local_file_path)
+        current_directory = check_create_directory(resource['src'], local_file_path, root_directory)
         url = urlparse.urljoin(webpage_cursor, resource['src'])
 
         if url not in resource_list:
