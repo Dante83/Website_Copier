@@ -42,15 +42,17 @@ def acquire_css_files(html, soup, webpage_cursor, local_file_path, root_director
 
             modified_css_sheet = cssutils.parseString(css)
             resource_urls = cssutils.getUrls(modified_css_sheet)
-            #modified_css_text = css
+            modified_css_text = css
 
-            #file_depth = href.count('/') - 2
-            #depth_relative_link_slashes = '../' * file_depth
+            print 'href_test: ', href
+            file_depth = href.count('/') - 3
+            depth_relative_link_slashes = '../' * file_depth
 
-            #for url in resource_urls:
-            #    if url.startswith('/'):
-            #        modified_url = depth_relative_link_slashes + url[1:]
-            #        modified_css_text = modified_css_text.replace(url, modified_url)
+            for url in resource_urls:
+                if url.startswith('/'):
+                    modified_url = depth_relative_link_slashes + url[1:]
+                    modified_css_text = modified_css_text.replace(url, modified_url)
+                    print 'modified_url: ', modified_url
 
             #Iterate over all internal resources on each css file
             try:
@@ -61,7 +63,7 @@ def acquire_css_files(html, soup, webpage_cursor, local_file_path, root_director
                 else:
                     file_loc = os.path.join(current_directory, (file_name + '.css') )
                 css_file = open(file_loc, 'w')
-                css_file.write(css)
+                css_file.write(modified_css_text)
             except IOError as e:
                 print 'IO Write Error: %s'%e
                 sys.exit(0)
