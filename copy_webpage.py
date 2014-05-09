@@ -5,6 +5,7 @@ import urllib2
 import urlparse
 import codecs
 from bs4 import BeautifulSoup
+from bs4 import UnicodeDammit
 from resource_acquisition_manager import *
 from page_resource_copier import *
 from page_resource_copier import *
@@ -23,7 +24,7 @@ def recursive_webpage_cursor(url_cursor, file_path, root_replacement, file_depth
 
     try:
         responce = urllib2.urlopen(request)
-        html = responce.read().decode('utf-8', 'ignore')
+        html = responce.read()
     except urllib2.URLError, e:
         raise Exception("%s returned an error: %s" % (url_cursor, e) )
         sys.exit(0)
@@ -39,7 +40,7 @@ def recursive_webpage_cursor(url_cursor, file_path, root_replacement, file_depth
     else:
         file_loc = os.path.join(current_directory, (file_name + '.html') )
 
-    modified_soup = BeautifulSoup(html)
+    modified_soup = BeautifulSoup(html, from_encoding = 'utf8')
 
     #Modify links in file so that they function as relative links in the final
     #output html
@@ -80,8 +81,9 @@ def recursive_webpage_cursor(url_cursor, file_path, root_replacement, file_depth
     if original_link not in url_list:
         url_list.append(updated_link)
         try:
-            html_file = open(file_loc, 'w')
-            html_file.write( modified_soup.prettify().encode('utf-8'))
+            html_file = codecs.open(file_loc, 'w', 'utf8')
+            output_string = modified_soup.prettify('latin-1')
+            html_file.write(output_string)
         except IOError as e:
             print 'IO Write Error: %s'%e
             sys.exit(0)
