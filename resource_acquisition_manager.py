@@ -41,7 +41,7 @@ def acquire_css_files(html, soup, webpage_cursor, local_file_path, root_director
                 sys.exit(0)
 
             modified_css_sheet = cssutils.parseString(css)
-            resource_urls = cssutils.getUrls(modified_css_sheet)
+            resource_urls = set(cssutils.getUrls(modified_css_sheet))
             modified_css_text = css
 
             print 'href_test: ', href
@@ -52,6 +52,7 @@ def acquire_css_files(html, soup, webpage_cursor, local_file_path, root_director
                 if url.startswith('/'):
                     modified_url = depth_relative_link_slashes + url[1:]
                     modified_css_text = modified_css_text.replace(url, modified_url)
+                    print url
                     print 'modified_url: ', modified_url
 
             #Iterate over all internal resources on each css file

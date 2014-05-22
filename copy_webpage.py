@@ -82,7 +82,8 @@ def recursive_webpage_cursor(url_cursor, file_path, root_replacement, file_depth
         url_list.append(updated_link)
         try:
             html_file = codecs.open(file_loc, 'w', 'utf8')
-            output_string = modified_soup.prettify('latin-1')
+            output_string = modified_soup.prettify('ascii')
+
             html_file.write(output_string)
         except IOError as e:
             print 'IO Write Error: %s'%e
